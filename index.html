@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar Weather System</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀️</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <canvas id="stars-canvas"></canvas>
+  <div class="app">
+    <header>
+      <div class="sun-icon">☀️</div>
+      <h1>Solar Weather System</h1>
+      <p class="subtitle">Real-time space weather from NOAA</p>
+    </header>
+
+    <!-- Alert Banner -->
+    <div id="alert-banner" class="alert-banner hidden"></div>
+
+    <!-- Location Search -->
+    <div class="search-wrap">
+      <div class="search-box">
+        <span class="search-icon">📍</span>
+        <input id="location-input" type="text" placeholder="Search city or location..." autocomplete="off" />
+        <button id="search-btn" onclick="handleLocationSearch()">Search</button>
+      </div>
+      <ul id="search-results" class="search-results hidden"></ul>
+    </div>
+
+    <div class="status-bar">
+      <span id="last-updated">Loading...</span>
+      <div style="display:flex;gap:0.5rem">
+        <button id="notif-btn" onclick="requestAlerts()">🔔 Alerts</button>
+        <button id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Solar Wind -->
+      <div class="card" id="solar-wind-card">
+        <div class="card-header">
+          <span class="icon">💨</span>
+          <h2>Solar Wind</h2>
+        </div>
+        <div class="card-body" id="solar-wind">
+          <div class="loading">Fetching data...</div>
+        </div>
+      </div>
+
+      <!-- Geomagnetic Storm -->
+      <div class="card" id="kp-card">
+        <div class="card-header">
+          <span class="icon">🌍</span>
+          <h2>Geomagnetic Activity</h2>
+        </div>
+        <div class="card-body" id="kp-index">
+          <div class="loading">Fetching data...</div>
+        </div>
+      </div>
+
+      <!-- Earth Weather -->
+      <div class="card" id="earth-weather-card">
+        <div class="card-header">
+          <span class="icon">🌤️</span>
+          <h2>Earth Weather</h2>
+        </div>
+        <div class="card-body" id="earth-weather">
+          <div class="loading">Fetching data...</div>
+        </div>
+      </div>
+
+      <!-- Aurora Forecast -->
+      <div class="card" id="aurora-card">
+        <div class="card-header">
+          <span class="icon">🌌</span>
+          <h2>Aurora Forecast</h2>
+        </div>
+        <div class="card-body" id="aurora">
+          <div class="loading">Fetching data...</div>
+        </div>
+      </div>
+
+      <!-- ISS Tracker -->
+      <div class="card" id="iss-card">
+        <div class="card-header">
+          <span class="icon">🛰️</span>
+          <h2>ISS Live Tracker</h2>
+        </div>
+        <div class="card-body" id="iss">
+          <div class="loading">Fetching data...</div>
+        </div>
+      </div>
+
+      <!-- Earthquake Alert -->
+      <div class="card" id="quake-card">
+        <div class="card-header">
+          <span class="icon">🌋</span>
+          <h2>Earthquake Alerts</h2>
+        </div>
+        <div class="card-body" id="earthquakes">
+          <div class="loading">Fetching data...</div>
+        </div>
+      </div>
+
+      <!-- 24h Chart - full width -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <span class="icon">📊</span>
+          <h2>24h Weather Chart</h2>
+        </div>
+        <div class="card-body">
+          <div class="chart-tabs">
+            <button class="tab-btn active" onclick="showChart('temp')">🌡️ Temp</button>
+            <button class="tab-btn" onclick="showChart('wind')">💨 Wind</button>
+            <button class="tab-btn" onclick="showChart('rain')">💧 Rain %</button>
+          </div>
+          <div id="chart-container">
+            <canvas id="weather-chart" height="120"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Data sourced from <a href="https://www.swpc.noaa.gov/" target="_blank">NOAA Space Weather Prediction Center</a>
+    </footer>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+  <script>
+    (function(){
+      const c = document.getElementById('stars-canvas');
+      const ctx = c.getContext('2d');
+      let stars = [], t = 0;
+
+      const planets = [
+        { xRatio:.78, yRatio:.22, r:72, color:['#c97a2a','#e8a44a','#a05a18','#f0c060'], rings:true,  ringColor:'rgba(210,150,60,', moonR:10, moonDist:110, moonSpeed:.4  },
+        { xRatio:.12, yRatio:.65, r:28, color:['#3a6aaa','#5588cc','#2a4a88','#7aaae8'], rings:false, ringColor:null,              moonR:6,  moonDist:46,  moonSpeed:.7  },
+        { xRatio:.88, yRatio:.78, r:14, color:['#aa4466','#cc6688','#882244','#ee88aa'], rings:false, ringColor:null,              moonR:0,  moonDist:0,   moonSpeed:0   },
+      ];
+
+      function resize(){ c.width = innerWidth; c.height = innerHeight; }
+
+      function init(){
+        stars = Array.from({length:250}, () => ({
+          x: Math.random() * c.width,
+          y: Math.random() * c.height,
+          r: Math.random() * 1.5 + 0.2,
+          speed: Math.random() * 0.15 + 0.02,
+          op: Math.random(),
+          dop: (Math.random() - 0.5) * 0.015
+        }));
+      }
+
+      function drawPlanet(p){
+        const x = p.xRatio * c.width;
+        const y = p.yRatio * c.height;
+
+        // atmosphere glow
+        const glow = ctx.createRadialGradient(x, y, p.r*.6, x, y, p.r*2.2);
+        glow.addColorStop(0, p.color[0].replace(')', ',0.18)').replace('rgb','rgba'));
+        glow.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(x, y, p.r*2.2, 0, Math.PI*2);
+        ctx.fillStyle = glow; ctx.fill();
+
+        // planet body gradient
+        const grad = ctx.createRadialGradient(x - p.r*.3, y - p.r*.3, p.r*.1, x, y, p.r);
+        grad.addColorStop(0,   p.color[1]);
+        grad.addColorStop(0.4, p.color[0]);
+        grad.addColorStop(0.8, p.color[2]);
+        grad.addColorStop(1,   '#000');
+        ctx.beginPath(); ctx.arc(x, y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = grad; ctx.fill();
+
+        // surface bands
+        ctx.save(); ctx.beginPath(); ctx.arc(x, y, p.r, 0, Math.PI*2); ctx.clip();
+        for(let i=0; i<4; i++){
+          const by = y - p.r + (i+1)*(p.r*2/5);
+          ctx.beginPath(); ctx.ellipse(x, by, p.r, p.r*.08, 0, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(0,0,0,0.18)`; ctx.fill();
+        }
+        // highlight
+        ctx.beginPath(); ctx.ellipse(x - p.r*.25, y - p.r*.3, p.r*.35, p.r*.18, -0.5, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
+        ctx.restore();
+
+        // rings
+        if(p.rings){
+          ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.28);
+          for(let ri=0; ri<3; ri++){
+            const inner = p.r*1.25 + ri*14;
+            const outer = inner + 9;
+            const rg = ctx.createRadialGradient(0,0,inner,0,0,outer);
+            rg.addColorStop(0,   p.ringColor+'0.05)');
+            rg.addColorStop(0.3, p.ringColor+'0.45)');
+            rg.addColorStop(0.7, p.ringColor+'0.35)');
+            rg.addColorStop(1,   p.ringColor+'0.0)');
+            ctx.beginPath();
+            ctx.arc(0,0,outer,0,Math.PI*2); ctx.arc(0,0,inner,0,Math.PI*2,true);
+            ctx.fillStyle = rg; ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        // moon
+        if(p.moonR > 0){
+          const angle = t * p.moonSpeed;
+          const mx = x + Math.cos(angle) * p.moonDist;
+          const my = y + Math.sin(angle) * p.moonDist * 0.38;
+          const mg = ctx.createRadialGradient(mx - p.moonR*.3, my - p.moonR*.3, 1, mx, my, p.moonR);
+          mg.addColorStop(0, '#ddeeff');
+          mg.addColorStop(1, '#667788');
+          ctx.beginPath(); ctx.arc(mx, my, p.moonR, 0, Math.PI*2);
+          ctx.fillStyle = mg; ctx.fill();
+        }
+      }
+
+      function draw(){
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        // nebula blobs
+        [[.5,.1,'rgba(0,80,40,'],[.2,.4,'rgba(20,0,60,'],[.7,.6,'rgba(60,20,0,']].forEach(([rx,ry,col])=>{
+          const ng = ctx.createRadialGradient(rx*c.width, ry*c.height, 0, rx*c.width, ry*c.height, c.width*.28);
+          ng.addColorStop(0, col+'0.07)'); ng.addColorStop(1,'transparent');
+          ctx.beginPath(); ctx.arc(rx*c.width, ry*c.height, c.width*.28, 0, Math.PI*2);
+          ctx.fillStyle = ng; ctx.fill();
+        });
+
+        // stars
+        stars.forEach(s => {
+          s.op += s.dop;
+          if(s.op > 1 || s.op < 0.05) s.dop *= -1;
+          s.y += s.speed;
+          if(s.y > c.height){ s.y = 0; s.x = Math.random()*c.width; }
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(200,255,230,${s.op})`; ctx.fill();
+        });
+
+        planets.forEach(drawPlanet);
+        t += 0.008;
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', ()=>{ resize(); init(); });
+      resize(); init(); draw();
+    })();
+  </script>
+</body>
+</html>

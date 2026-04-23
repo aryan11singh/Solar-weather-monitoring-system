@@ -1,0 +1,6 @@
+[
+  { "time": "2026-04-17 08:24:00 UTC", "speed": 842, "type": "Halo CME" },
+  { "time": "2026-04-16 21:10:00 UTC", "speed": 620, "type": "Partial Halo" },
+  { "time": "2026-04-16 11:45:00 UTC", "speed": 1105, "type": "Full Halo CME" },
+  { "time": "2026-04-15 17:30:00 UTC", "speed": 430, "type": "Partial Halo" }
+]

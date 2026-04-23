@@ -1,0 +1,28 @@
+{
+  "features": [
+    {
+      "properties": { "mag": 6.2, "place": "150km NW of San Jose, Costa Rica", "time": 1713340800000 },
+      "geometry": { "coordinates": [-85.12, 10.45, 12.3] }
+    },
+    {
+      "properties": { "mag": 5.8, "place": "Hokkaido, Japan", "time": 1713326400000 },
+      "geometry": { "coordinates": [143.21, 43.67, 35.0] }
+    },
+    {
+      "properties": { "mag": 5.1, "place": "Southern Iran", "time": 1713312000000 },
+      "geometry": { "coordinates": [57.88, 27.34, 10.0] }
+    },
+    {
+      "properties": { "mag": 4.7, "place": "Central Italy", "time": 1713297600000 },
+      "geometry": { "coordinates": [13.22, 42.55, 8.5] }
+    },
+    {
+      "properties": { "mag": 4.3, "place": "Northern Chile", "time": 1713283200000 },
+      "geometry": { "coordinates": [-69.45, -22.10, 55.2] }
+    },
+    {
+      "properties": { "mag": 3.9, "place": "Southern California, USA", "time": 1713268800000 },
+      "geometry": { "coordinates": [-117.34, 33.88, 6.1] }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+[
+  { "time_tag": "2026-04-17 21:00:00", "kp": "4.33", "observed": "observed", "noaa_scale": "G0" },
+  { "time_tag": "2026-04-18 00:00:00", "kp": "3.67", "observed": "estimated", "noaa_scale": "G0" },
+  { "time_tag": "2026-04-18 03:00:00", "kp": "3.33", "observed": "predicted", "noaa_scale": "G0" },
+  { "time_tag": "2026-04-18 06:00:00", "kp": "3.00", "observed": "predicted", "noaa_scale": "G0" },
+  { "time_tag": "2026-04-18 09:00:00", "kp": "2.67", "observed": "predicted", "noaa_scale": "G0" },
+  { "time_tag": "2026-04-18 12:00:00", "kp": "2.33", "observed": "predicted", "noaa_scale": "G0" },
+  { "time_tag": "2026-04-18 15:00:00", "kp": "2.00", "observed": "predicted", "noaa_scale": "G0" },
+  { "time_tag": "2026-04-18 18:00:00", "kp": "2.33", "observed": "predicted", "noaa_scale": "G0" }
+]

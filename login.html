@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar Weather — Login</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀️</text></svg>" />
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <canvas id="stars-canvas"></canvas>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="logo">☀️</div>
+      <h1>SOLAR WEATHER</h1>
+      <p class="tagline">SPACE MONITORING SYSTEM</p>
+
+      <!-- Step 1: Phone -->
+      <div id="step-phone">
+        <p class="label">ENTER MOBILE NUMBER</p>
+        <div class="input-group">
+          <select id="country-code">
+            <option value="+91">🇮🇳 +91</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+61">🇦🇺 +61</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+81">🇯🇵 +81</option>
+            <option value="+49">🇩🇪 +49</option>
+          </select>
+          <input id="phone" type="tel" placeholder="9876543210" maxlength="15" />
+        </div>
+        <div id="phone-error" class="error-msg"></div>
+        <button id="send-otp-btn" onclick="sendOTP()">SEND OTP →</button>
+      </div>
+
+      <!-- Step 2: OTP -->
+      <div id="step-otp" class="hidden">
+        <p class="label">ENTER 6-DIGIT OTP</p>
+        <p class="sublabel" id="otp-sent-to"></p>
+        <div class="otp-inputs">
+          <input class="otp-box" type="text" maxlength="1" />
+          <input class="otp-box" type="text" maxlength="1" />
+          <input class="otp-box" type="text" maxlength="1" />
+          <input class="otp-box" type="text" maxlength="1" />
+          <input class="otp-box" type="text" maxlength="1" />
+          <input class="otp-box" type="text" maxlength="1" />
+        </div>
+        <div id="otp-error" class="error-msg"></div>
+        <button id="verify-btn" onclick="verifyOTP()">VERIFY & LOGIN →</button>
+        <button class="link-btn" onclick="resendOTP()">Resend OTP <span id="resend-timer"></span></button>
+        <button class="link-btn" onclick="backToPhone()">← Change Number</button>
+      </div>
+
+      <div class="footer-note">Demo mode — OTP shown in browser console</div>
+    </div>
+  </div>
+  <script src="login.js"></script>
+  <script>
+    (function(){
+      const c = document.getElementById('stars-canvas');
+      const ctx = c.getContext('2d');
+      let stars = [], t = 0;
+
+      const planets = [
+        { xRatio:.82, yRatio:.18, r:80, color:['#c97a2a','#e8a44a','#a05a18','#f0c060'], rings:true,  ringColor:'rgba(210,150,60,', moonR:11, moonDist:120, moonSpeed:.4 },
+        { xRatio:.08, yRatio:.72, r:30, color:['#3a6aaa','#5588cc','#2a4a88','#7aaae8'], rings:false, ringColor:null,              moonR:6,  moonDist:48,  moonSpeed:.7 },
+      ];
+
+      function resize(){ c.width = innerWidth; c.height = innerHeight; }
+
+      function init(){
+        stars = Array.from({length:250}, () => ({
+          x: Math.random() * c.width,
+          y: Math.random() * c.height,
+          r: Math.random() * 1.5 + 0.2,
+          speed: Math.random() * 0.15 + 0.02,
+          op: Math.random(),
+          dop: (Math.random() - 0.5) * 0.015
+        }));
+      }
+
+      function drawPlanet(p){
+        const x = p.xRatio * c.width;
+        const y = p.yRatio * c.height;
+
+        const glow = ctx.createRadialGradient(x, y, p.r*.6, x, y, p.r*2.2);
+        glow.addColorStop(0, p.color[0].replace(')', ',0.18)').replace('rgb','rgba'));
+        glow.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(x, y, p.r*2.2, 0, Math.PI*2);
+        ctx.fillStyle = glow; ctx.fill();
+
+        const grad = ctx.createRadialGradient(x - p.r*.3, y - p.r*.3, p.r*.1, x, y, p.r);
+        grad.addColorStop(0,   p.color[1]);
+        grad.addColorStop(0.4, p.color[0]);
+        grad.addColorStop(0.8, p.color[2]);
+        grad.addColorStop(1,   '#000');
+        ctx.beginPath(); ctx.arc(x, y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = grad; ctx.fill();
+
+        ctx.save(); ctx.beginPath(); ctx.arc(x, y, p.r, 0, Math.PI*2); ctx.clip();
+        for(let i=0; i<4; i++){
+          const by = y - p.r + (i+1)*(p.r*2/5);
+          ctx.beginPath(); ctx.ellipse(x, by, p.r, p.r*.08, 0, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fill();
+        }
+        ctx.beginPath(); ctx.ellipse(x - p.r*.25, y - p.r*.3, p.r*.35, p.r*.18, -0.5, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
+        ctx.restore();
+
+        if(p.rings){
+          ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.28);
+          for(let ri=0; ri<3; ri++){
+            const inner = p.r*1.25 + ri*14;
+            const outer = inner + 9;
+            const rg = ctx.createRadialGradient(0,0,inner,0,0,outer);
+            rg.addColorStop(0,   p.ringColor+'0.05)');
+            rg.addColorStop(0.3, p.ringColor+'0.45)');
+            rg.addColorStop(0.7, p.ringColor+'0.35)');
+            rg.addColorStop(1,   p.ringColor+'0.0)');
+            ctx.beginPath();
+            ctx.arc(0,0,outer,0,Math.PI*2); ctx.arc(0,0,inner,0,Math.PI*2,true);
+            ctx.fillStyle = rg; ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        if(p.moonR > 0){
+          const angle = t * p.moonSpeed;
+          const mx = x + Math.cos(angle) * p.moonDist;
+          const my = y + Math.sin(angle) * p.moonDist * 0.38;
+          const mg = ctx.createRadialGradient(mx - p.moonR*.3, my - p.moonR*.3, 1, mx, my, p.moonR);
+          mg.addColorStop(0, '#ddeeff'); mg.addColorStop(1, '#667788');
+          ctx.beginPath(); ctx.arc(mx, my, p.moonR, 0, Math.PI*2);
+          ctx.fillStyle = mg; ctx.fill();
+        }
+      }
+
+      function draw(){
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        [[.5,.05,'rgba(0,80,40,'],[.15,.45,'rgba(20,0,60,'],[.75,.65,'rgba(60,20,0,']].forEach(([rx,ry,col])=>{
+          const ng = ctx.createRadialGradient(rx*c.width, ry*c.height, 0, rx*c.width, ry*c.height, c.width*.28);
+          ng.addColorStop(0, col+'0.07)'); ng.addColorStop(1,'transparent');
+          ctx.beginPath(); ctx.arc(rx*c.width, ry*c.height, c.width*.28, 0, Math.PI*2);
+          ctx.fillStyle = ng; ctx.fill();
+        });
+
+        stars.forEach(s => {
+          s.op += s.dop;
+          if(s.op > 1 || s.op < 0.05) s.dop *= -1;
+          s.y += s.speed;
+          if(s.y > c.height){ s.y = 0; s.x = Math.random()*c.width; }
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(200,255,230,${s.op})`; ctx.fill();
+        });
+
+        planets.forEach(drawPlanet);
+        t += 0.008;
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', ()=>{ resize(); init(); });
+      resize(); init(); draw();
+    })();
+  </script>
+</body>
+</html>
