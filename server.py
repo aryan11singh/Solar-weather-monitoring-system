@@ -79,5 +79,5 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     server = HTTPServer(('', 8181), Handler)
-    print('🌞 Solar Weather Server running at http://localhost:8181')
+    print('Solar Weather Server running at http://localhost:8181')
     server.serve_forever()
